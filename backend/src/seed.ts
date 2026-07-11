@@ -11,6 +11,20 @@ async function main() {
       create: { name },
     });
   }
+  const paymentmethods = [
+    "現金",
+    "クレジットカード",
+    "交通系IC",
+    "QRコード決済",
+  ];
+
+  for (const name of paymentmethods) {
+    await prisma.paymentmethod.upsert({
+      where: { name },
+      update: {},
+      create: { name },
+    });
+  }
 
   const user = await prisma.user.upsert({
     where: { email: "demo@example.com" },

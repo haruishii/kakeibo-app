@@ -30,16 +30,23 @@ model Category {
   transactions Transaction[]
 }
 
+model Paymentmethod {
+  id             Int      @id @default(autoincrement())
+  name           String   @unique
+  transactions  Transaction[]
+}
+
 model Transaction {
   id             Int      @id @default(autoincrement())
   amount         Int
   date           String
   content        String
-  payment_method String
   user_id        Int
   group_id       Int
   category_id    Int
+  paymentmethod_id Int 
   user           User     @relation(fields: [user_id], references: [id])
   group          Group    @relation(fields: [group_id], references: [id])
   category       Category @relation(fields: [category_id], references: [id])
+  paymentmethod  Paymentmethod @relation(fields: [paymentmethod_id], references: [id])
 }

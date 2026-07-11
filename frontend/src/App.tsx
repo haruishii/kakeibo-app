@@ -4,13 +4,17 @@ type Category = {
   id: number;
   name: string;
 };
+type PaymentMethod = {
+  id: number;
+  name: string;
+};
 
 type Transaction = {
   id: number;
   amount: number;
   date: string;
   content: string;
-  payment_method: string;
+  paymentmethod: PaymentMethod;
   category: Category;
   user: {
     name: string;
@@ -23,23 +27,28 @@ const initialForm = {
   amount: "",
   date: new Date().toISOString().split("T")[0],
   content: "",
-  payment_method: "現金",
+  paymentmethod_id: "1",
   category_id: "1",
 };
 
 function App() {
   const [form, setForm] = useState(initialForm);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   const loadData = async () => {
-    const [categoriesRes, transactionsRes] = await Promise.all([
-      fetch(`${apiBaseUrl}/categories`),
-      fetch(`${apiBaseUrl}/transactions`),
-    ]);
+    const [categoriesRes, paymentMethodsRes, transactionsRes] =
+      await Promise.all([
+        fetch(`${apiBaseUrl}/categories`),
+        fetch(`${apiBaseUrl}/payment-methods`),
+        fetch(`${apiBaseUrl}/transactions`),
+      ]);
     const categoriesData = await categoriesRes.json();
+    const paymentMethodsData = await paymentMethodsRes.json();
     const transactionsData = await transactionsRes.json();
     setCategories(categoriesData);
+    setPaymentMethods(paymentMethodsData);
     setTransactions(transactionsData);
   };
 
@@ -139,14 +148,20 @@ function App() {
               </label>
               <label className="flex flex-col text-sm gap-1">
                 <span>支払い方法</span>
-                <input
-                  type="text"
-                  value={form.payment_method}
+                {/* Changed from input to select for predefined payment methods */}
+                <select
+                  value={form.paymentmethod_id}
                   onChange={(e) =>
-                    setForm({ ...form, payment_method: e.target.value })
+                    setForm({ ...form, paymentmethod_id: e.target.value })
                   }
-                  className="rounded border border-slate-300 p-2"
-                />
+                  className="rounded border border-slate-300 p-2 bg-white"
+                >
+                  {paymentMethods.map((method) => (
+                    <option key={method.id} value={method.id}>
+                      {method.name}
+                    </option>
+                  ))}
+                </select>
               </label>
             </div>
             <button
@@ -177,7 +192,7 @@ function App() {
                         ¥{transaction.amount.toLocaleString()}
                       </p>
                       <p className="text-sm text-slate-500">
-                        {transaction.payment_method}
+                        {transaction.paymentmethod?.name}
                       </p>
                       <button
                         onClick={() => handleDelete(transaction.id)}

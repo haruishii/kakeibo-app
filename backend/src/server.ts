@@ -19,7 +19,7 @@ app.get("/api/health", (_req, res) => {
 
 app.post("/api/transactions", async (req, res) => {
   try {
-    const { amount, date, content, payment_method, category_id } = req.body;
+    const { amount, date, content, category_id, paymentmethod_id } = req.body;
 
     const user = await prisma.user.findFirst();
     const group = await prisma.group.findFirst();
@@ -33,13 +33,16 @@ app.post("/api/transactions", async (req, res) => {
         amount: Number(amount),
         date,
         content,
-        payment_method,
         user_id: user.id,
         group_id: group.id,
         category_id: Number(category_id),
+        paymentmethod_id: Number(paymentmethod_id) || 1,
       },
     });
 
+    console.log(
+      `✅  success! ￥${transaction.amount} (${transaction.content})`,
+    );
     res.status(201).json(transaction);
   } catch (error) {
     console.error(error);
@@ -53,6 +56,7 @@ app.get("/api/transactions", async (_req, res) => {
       include: {
         category: true,
         user: true,
+        paymentmethod: true,
       },
       orderBy: { id: "desc" },
     });
@@ -76,6 +80,7 @@ app.delete("/api/transactions/:id", async (req, res) => {
     });
 
     // 3. Send success response to the client
+    console.log(`🗑️   success! ID: ${transactionId}`);
     res.json({ message: "Transaction deleted successfully." });
   } catch (error) {
     console.error(error);
@@ -92,6 +97,18 @@ app.get("/api/categories", async (_req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to fetch categories." });
+  }
+});
+
+app.get("/api/payment-methods", async (_req, res) => {
+  try {
+    const paymentMethods = await prisma.paymentmethod.findMany({
+      orderBy: { id: "asc" }, // ID順（現金、クレジットカード...の順）に並べる
+    });
+    res.json(paymentMethods);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch payment methods." });
   }
 });
 
