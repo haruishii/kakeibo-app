@@ -1,0 +1,45 @@
+// Backend / Prisma schema for the household account book app
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int           @id @default(autoincrement())
+  email    String        @unique
+  name     String
+  groups   Group[]
+  transactions Transaction[]
+}
+
+model Group {
+  id           Int           @id @default(autoincrement())
+  name         String
+  members      User[]
+  transactions Transaction[]
+}
+
+model Category {
+  id           Int           @id @default(autoincrement())
+  name         String        @unique
+  transactions Transaction[]
+}
+
+model Transaction {
+  id             Int      @id @default(autoincrement())
+  amount         Int
+  date           String
+  content        String
+  payment_method String
+  user_id        Int
+  group_id       Int
+  category_id    Int
+  user           User     @relation(fields: [user_id], references: [id])
+  group          Group    @relation(fields: [group_id], references: [id])
+  category       Category @relation(fields: [category_id], references: [id])
+}
