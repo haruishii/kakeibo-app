@@ -1,8 +1,8 @@
-import { prisma } from './lib/prisma.js';
+import { prisma } from "./lib/prisma.js";
 
 // Backend / Seed script: initial master data for categories
 async function main() {
-  const categories = ['食費', '日用品', '交通費', '娯楽', 'その他'];
+  const categories = ["食費", "日用品", "交通費", "娯楽", "その他"];
 
   for (const name of categories) {
     await prisma.category.upsert({
@@ -13,13 +13,13 @@ async function main() {
   }
 
   const user = await prisma.user.upsert({
-    where: { email: 'demo@example.com' },
+    where: { email: "demo@example.com" },
     update: {},
-    create: { email: 'demo@example.com', name: 'デモユーザー' },
+    create: { email: "demo@example.com", name: "デモユーザー" },
   });
 
   const group = await prisma.group.create({
-    data: { name: '家族' },
+    data: { name: "家族" },
   });
 
   await prisma.user.update({
@@ -31,7 +31,7 @@ async function main() {
     },
   });
 
-  console.log('Seed completed.');
+  console.log("Seed completed.");
 }
 
 main()

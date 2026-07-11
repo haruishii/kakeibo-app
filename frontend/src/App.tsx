@@ -58,6 +58,20 @@ function App() {
     await loadData();
   };
 
+  // Handle transaction deletion
+  const handleDelete = async (id: number) => {
+    // Confirm before proceeding with the deletion
+    if (!window.confirm("本当にこのデータを削除しますか？")) return;
+
+    // Send DELETE request to the API
+    await fetch(`${apiBaseUrl}/transactions/${id}`, {
+      method: "DELETE",
+    });
+
+    // Reload data to reflect the changes on the UI
+    await loadData();
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 p-6 text-slate-800">
       <div className="mx-auto max-w-5xl space-y-6">
@@ -165,6 +179,12 @@ function App() {
                       <p className="text-sm text-slate-500">
                         {transaction.payment_method}
                       </p>
+                      <button
+                        onClick={() => handleDelete(transaction.id)}
+                        className="mt-2 rounded bg-red-500 px-3 py-1 text-xs text-white hover:bg-red-600 transition-colors"
+                      >
+                        削除
+                      </button>
                     </div>
                   </div>
                 </li>

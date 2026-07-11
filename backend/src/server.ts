@@ -64,6 +64,25 @@ app.get("/api/transactions", async (_req, res) => {
   }
 });
 
+// DELETE endpoint for a specific transaction
+app.delete("/api/transactions/:id", async (req, res) => {
+  try {
+    // 1. Extract transaction ID from the URL parameters
+    const transactionId = Number(req.params.id);
+
+    // 2. Delete the record via Prisma
+    await prisma.transaction.delete({
+      where: { id: transactionId },
+    });
+
+    // 3. Send success response to the client
+    res.json({ message: "Transaction deleted successfully." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to delete transaction." });
+  }
+});
+
 app.get("/api/categories", async (_req, res) => {
   try {
     const categories = await prisma.category.findMany({
