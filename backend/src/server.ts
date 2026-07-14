@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { prisma } from "./lib/prisma.js";
+import path from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config();
 
@@ -110,6 +112,22 @@ app.get("/api/payment-methods", async (_req, res) => {
     console.error(error);
     res.status(500).json({ error: "Failed to fetch payment methods." });
   }
+});
+
+// ESモジュール環境で現在のディレクトリ（__dirname）を取得するおまじない
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// 1. フロントエンドの完成品（dist）が置かれている住所を計算
+// （※ server.js は backend/dist の中で動くので、2つ上の階層に行って frontend/dist を指す）
+const frontendDistPath = path.join(__dirname, "../../frontend/dist");
+
+// 2. そのフォルダの中身を、静的ファイルとして公開する
+app.use(express.static(frontendDistPath));
+
+// 3. API以外のどんなURL（/ や /about など）が来ても、Reactの index.html を返す
+app.get("*", (req, res) => {
+  res.sendFile(path.join(frontendDistPath, "index.html"));
 });
 
 app.listen(port, () => {
