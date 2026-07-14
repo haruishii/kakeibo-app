@@ -312,8 +312,8 @@ function App() {
                           ))}
                         </Pie>
                         <Tooltip
-                          formatter={(value: number) =>
-                            `¥${value.toLocaleString()}`
+                          formatter={(value: any) =>
+                            `¥${Number(value).toLocaleString()}`
                           }
                         />
                       </PieChart>
