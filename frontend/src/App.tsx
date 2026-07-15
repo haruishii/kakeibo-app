@@ -23,7 +23,6 @@ const initialForm = {
   category_id: "1",
 };
 
-// グラフの色分け用カラーコード
 const COLORS = [
   "#0088FE",
   "#00C49F",
@@ -38,9 +37,11 @@ function App() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-
-  // 🌟 追加：現在表示している「月」を管理する状態（初期値は今月）
   const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  // 🌟 追加：新ワード入力用のState
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newMethodName, setNewMethodName] = useState("");
 
   const loadData = async () => {
     const [categoriesRes, paymentMethodsRes, transactionsRes] =
@@ -78,7 +79,50 @@ function App() {
     await loadData();
   };
 
-  // 🌟 追加機能1：月を切り替える関数
+  // 🌟 追加：新カテゴリをバックエンドへPOST送信する関数
+  const handleAddCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCategoryName.trim()) return;
+
+    const res = await fetch(`${apiBaseUrl}/categories`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newCategoryName }),
+    });
+
+    if (!res.ok) {
+      const errData = await res.json();
+      alert(errData.error || "追加に失敗しました");
+      return;
+    }
+
+    setNewCategoryName("");
+    await loadData(); // 🌟 DBの最新状態を再読み込みしてプルダウンを更新！
+    alert("新しいカテゴリを追加しました！");
+  };
+
+  // 🌟 追加：新支払い方法をバックエンドへPOST送信する関数
+  const handleAddPaymentMethod = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMethodName.trim()) return;
+
+    const res = await fetch(`${apiBaseUrl}/payment-methods`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newMethodName }),
+    });
+
+    if (!res.ok) {
+      const errData = await res.json();
+      alert(errData.error || "追加に失敗しました");
+      return;
+    }
+
+    setNewMethodName("");
+    await loadData(); // 🌟 プルダウンを同期！
+    alert("新しい支払い方法を追加しました！");
+  };
+
   const handlePrevMonth = () => {
     setCurrentMonth(
       new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1),
@@ -90,7 +134,6 @@ function App() {
     );
   };
 
-  // 🌟 追加機能2：現在の月に該当するデータだけを絞り込む
   const filteredTransactions = transactions.filter((t) => {
     const tDate = new Date(t.date);
     return (
@@ -99,9 +142,7 @@ function App() {
     );
   });
 
-  // 🌟 追加機能3：円グラフ用にカテゴリごとの合計額を計算する
   const calculateChartData = () => {
-    // 1. カテゴリごとに金額を合算する
     const categoryTotals = filteredTransactions.reduce(
       (acc, transaction) => {
         const categoryName = transaction.category.name;
@@ -114,13 +155,11 @@ function App() {
       {} as Record<string, number>,
     );
 
-    // 2. 全体の合計金額を計算する
     const totalAmount = Object.values(categoryTotals).reduce(
       (sum, amount) => sum + amount,
       0,
     );
 
-    // 3. Rechartsが読み込める配列形式に変換し、割合（%）も計算する
     return Object.keys(categoryTotals).map((name) => {
       const value = categoryTotals[name];
       const percentage =
@@ -143,88 +182,147 @@ function App() {
         </header>
 
         <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          {/* 左側：収支入力フォーム（変更なし） */}
-          <form
-            onSubmit={handleSubmit}
-            className="rounded-2xl bg-white p-6 shadow space-y-4 h-fit"
-          >
-            <h2 className="text-xl font-semibold">収支入力</h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              <label className="flex flex-col text-sm gap-1">
-                <span>金額</span>
-                <input
-                  type="number"
-                  required
-                  value={form.amount}
-                  onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                  className="rounded border border-slate-300 p-2"
-                />
-              </label>
-              <label className="flex flex-col text-sm gap-1">
-                <span>日付</span>
-                <input
-                  type="date"
-                  required
-                  value={form.date}
-                  onChange={(e) => setForm({ ...form, date: e.target.value })}
-                  className="rounded border border-slate-300 p-2"
-                />
-              </label>
-              <label className="flex flex-col text-sm gap-1 md:col-span-2">
-                <span>内容</span>
-                <input
-                  type="text"
-                  required
-                  value={form.content}
-                  onChange={(e) =>
-                    setForm({ ...form, content: e.target.value })
-                  }
-                  className="rounded border border-slate-300 p-2"
-                />
-              </label>
-              <label className="flex flex-col text-sm gap-1">
-                <span>カテゴリ</span>
-                <select
-                  value={form.category_id}
-                  onChange={(e) =>
-                    setForm({ ...form, category_id: e.target.value })
-                  }
-                  className="rounded border border-slate-300 p-2"
-                >
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="flex flex-col text-sm gap-1">
-                <span>支払い方法</span>
-                <select
-                  value={form.paymentmethod_id}
-                  onChange={(e) =>
-                    setForm({ ...form, paymentmethod_id: e.target.value })
-                  }
-                  className="rounded border border-slate-300 p-2 bg-white"
-                >
-                  {paymentMethods.map((method) => (
-                    <option key={method.id} value={method.id}>
-                      {method.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <button
-              type="submit"
-              className="rounded bg-blue-600 px-4 py-2 font-semibold text-white w-full"
+          {/* 🛠️ 左側カラム：収支入力 ＆ マスターデータ追加フォーム */}
+          <div className="space-y-6 h-fit">
+            {/* 収支入力フォーム */}
+            <form
+              onSubmit={handleSubmit}
+              className="rounded-2xl bg-white p-6 shadow space-y-4"
             >
-              登録する
-            </button>
-          </form>
+              <h2 className="text-xl font-semibold">収支入力</h2>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="flex flex-col text-sm gap-1">
+                  <span>金額</span>
+                  <input
+                    type="number"
+                    required
+                    value={form.amount}
+                    onChange={(e) =>
+                      setForm({ ...form, amount: e.target.value })
+                    }
+                    className="rounded border border-slate-300 p-2"
+                  />
+                </label>
+                <label className="flex flex-col text-sm gap-1">
+                  <span>日付</span>
+                  <input
+                    type="date"
+                    required
+                    value={form.date}
+                    onChange={(e) => setForm({ ...form, date: e.target.value })}
+                    className="rounded border border-slate-300 p-2"
+                  />
+                </label>
+                <label className="flex flex-col text-sm gap-1 md:col-span-2">
+                  <span>内容</span>
+                  <input
+                    type="text"
+                    required
+                    value={form.content}
+                    onChange={(e) =>
+                      setForm({ ...form, content: e.target.value })
+                    }
+                    className="rounded border border-slate-300 p-2"
+                  />
+                </label>
+                <label className="flex flex-col text-sm gap-1">
+                  <span>カテゴリ</span>
+                  <select
+                    value={form.category_id}
+                    onChange={(e) =>
+                      setForm({ ...form, category_id: e.target.value })
+                    }
+                    className="rounded border border-slate-300 p-2 bg-white"
+                  >
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col text-sm gap-1">
+                  <span>支払い方法</span>
+                  <select
+                    value={form.paymentmethod_id}
+                    onChange={(e) =>
+                      setForm({ ...form, paymentmethod_id: e.target.value })
+                    }
+                    className="rounded border border-slate-300 p-2 bg-white"
+                  >
+                    {paymentMethods.map((method) => (
+                      <option key={method.id} value={method.id}>
+                        {method.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <button
+                type="submit"
+                className="rounded bg-blue-600 px-4 py-2 font-semibold text-white w-full hover:bg-blue-700 transition-colors"
+              >
+                登録する
+              </button>
+            </form>
+
+            {/* 🌟 新機能：マスターデータ追加パネル */}
+            <div className="rounded-2xl bg-white p-6 shadow space-y-4">
+              <h2 className="text-xl font-semibold">項目の追加</h2>
+              <div className="space-y-4">
+                {/* カテゴリ追加 */}
+                <form
+                  onSubmit={handleAddCategory}
+                  className="flex flex-col text-sm gap-1"
+                >
+                  <span>新しいカテゴリを追加</span>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="例: 食費、交通費、娯楽"
+                      required
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      className="rounded border border-slate-300 p-2 flex-1"
+                    />
+                    <button
+                      type="submit"
+                      className="rounded bg-slate-700 px-4 py-2 font-semibold text-white hover:bg-slate-800 transition-colors"
+                    >
+                      追加
+                    </button>
+                  </div>
+                </form>
+
+                {/* 支払い方法追加 */}
+                <form
+                  onSubmit={handleAddPaymentMethod}
+                  className="flex flex-col text-sm gap-1"
+                >
+                  <span>新しい支払い方法を追加</span>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="例: 現金手渡し、リボ24回払い"
+                      required
+                      value={newMethodName}
+                      onChange={(e) => setNewMethodName(e.target.value)}
+                      className="rounded border border-slate-300 p-2 flex-1"
+                    />
+                    <button
+                      type="submit"
+                      className="rounded bg-slate-700 px-4 py-2 font-semibold text-white hover:bg-slate-800 transition-colors"
+                    >
+                      追加
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
 
           {/* 右側：収支一覧とグラフ */}
-          <div className="rounded-2xl bg-white p-6 shadow space-y-6">
+          <div className="rounded-2xl bg-white p-6 shadow space-y-6 h-fit">
             {/* 月切り替えヘッダー */}
             <div className="flex items-center justify-between">
               <button
@@ -319,7 +417,7 @@ function App() {
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
-                  {/* カテゴリごとの詳細リスト（名前・割合・金額） */}
+                  {/* カテゴリごとの詳細リスト */}
                   <div className="grid grid-cols-2 gap-2 mt-4 text-sm">
                     {chartData.map((data, index) => (
                       <div

@@ -90,6 +90,24 @@ app.delete("/api/transactions/:id", async (req, res) => {
   }
 });
 
+// カテゴリの追加API
+app.post("/api/categories", async (req, res) => {
+  const { name } = req.body;
+  if (!name) {
+    return res.status(400).json({ error: "名前は必須です" });
+  }
+
+  try {
+    const newCategory = await prisma.category.create({
+      data: { name },
+    });
+    res.json(newCategory);
+  } catch (error) {
+    // schemaで@uniqueが設定されているため、重複エラーをキャッチする
+    res.status(400).json({ error: "そのカテゴリは既に存在します" });
+  }
+});
+
 app.get("/api/categories", async (_req, res) => {
   try {
     const categories = await prisma.category.findMany({
@@ -99,6 +117,23 @@ app.get("/api/categories", async (_req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to fetch categories." });
+  }
+});
+
+// 支払い方法の追加API
+app.post("/api/payment-methods", async (req, res) => {
+  const { name } = req.body;
+  if (!name) {
+    return res.status(400).json({ error: "名前は必須です" });
+  }
+
+  try {
+    const newMethod = await prisma.paymentmethod.create({
+      data: { name },
+    });
+    res.json(newMethod);
+  } catch (error) {
+    res.status(400).json({ error: "その支払い方法は既に存在します" });
   }
 });
 
